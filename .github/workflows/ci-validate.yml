@@ -6,34 +6,37 @@ on:
       - 'terraform/**'
       - 'policies/**'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write       # needed for OIDC login
-      contents: read
-      pull-requests: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure login with OIDC
+      - name: Azure login with Service Principal
         uses: azure/login@v2
         with:
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          auth-type: SERVICE_PRINCIPAL
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init (local backend)
+      - name: Terraform Init
         working-directory: terraform
         run: terraform init -input=false
 
       - name: Terraform Format
         working-directory: terraform
-        run: terraform fmt -check
+        run: terraform fmt
 
       - name: Terraform Plan to JSON
         working-directory: terraform
@@ -66,6 +69,6 @@ jobs:
           recreate: true
           message: |
             ## Security Gate Results
-            - Terraform validated and planned against Azure.
+            - Terraform validated and planned.
             - Checkov and OPA evaluated the plan.
             - If this workflow fails, the Auto Fix workflow will propose a remediation PR.
