@@ -1,9 +1,12 @@
-
 name: CI - Validate and Policy Gate
 
 on:
   pull_request:
     paths: [ 'terraform/**', 'policies/**' ]
+
+env:
+  ARM_SKIP_CREDENTIALS_VALIDATION: true
+  ARM_SKIP_PROVIDER_REGISTRATION: true
 
 jobs:
   validate:
@@ -12,32 +15,33 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
+      - name: Terraform Init (no backend)
         working-directory: terraform
-        run: terraform init -input=false
+        run: terraform init -backend=false -input=false
 
       - name: Terraform Format
         working-directory: terraform
         run: terraform fmt
 
-      - name: Terraform Plan to JSON
+      - name: Terraform Plan to JSON (offline style)
         working-directory: terraform
         run: |
           terraform validate
-          terraform plan -out=plan.out -var="location=${{ vars.AZURE_LOCATION }}"             -var="resource_group_name=${{ vars.AZURE_RG }}"             -var="storage_account_name=raas${{ github.run_id }}"
+          terraform plan \
+            -refresh=false \
+            -lock=false \
+            -out=plan.out \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="resource_group_name=${{ vars.AZURE_RG }}" \
+            -var="storage_account_name=raas${{ github.run_id }}"
           terraform show -json plan.out > plan.json
-
-      - name: Checkov Scan
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: terraform
-          soft_fail: true
 
       - name: Install Conftest
         run: |
@@ -53,5 +57,5 @@ jobs:
           recreate: true
           message: |
             ## Security Gate Results
-            Terraform validated and planned.
-            Checkov and OPA executed. If this workflow fails, the Auto-Fix workflow will open a remediation PR.
+            Terraform validated and planned (offline).
+            Checkov and OPA executed on plan.json.
