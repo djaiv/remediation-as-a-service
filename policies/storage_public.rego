@@ -8,7 +8,7 @@ deny[msg] {
   rc.type == "azurerm_storage_container"
 
   access := rc.change.after.container_access_type
-  access == "blob"  or "container"    # public read for blobs and containers
+  access == "blob"  # or "container"   
 
 
   msg := sprintf("Storage container %v allows anonymous public access (container_access_type = %v)", [rc.name, access])
