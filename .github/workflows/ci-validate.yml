@@ -51,10 +51,8 @@ jobs:
           directory: terraform
           soft_fail: true
 
-      - name: Install Conftest
-        run: |
-          curl -L https://github.com/open-policy-agent/conftest/releases/latest/download/conftest_Linux_x86_64.tar.gz | tar zx
-          sudo mv conftest /usr/local/bin/conftest
+      - name: Setup Conftest
+        uses: princespaghetti/setup-conftest@v1
 
       - name: Conftest OPA Policy Gate
         run: conftest test terraform/plan.json -p policies
