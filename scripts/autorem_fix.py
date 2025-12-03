@@ -1,38 +1,38 @@
-
-import re, pathlib
+import re
+import pathlib
 
 tf_path = pathlib.Path("terraform/main.tf")
 tf = tf_path.read_text()
 
-# Fix 1: allow_blob_public_access = true -> false
-tf = re.sub(r'allow_blob_public_access\s*=\s*true', 'allow_blob_public_access = false', tf)
-
-# Fix 2: Replace permissive RDP rule with restricted or deny
-before = (
-    'name                       = "rdp-anywhere"\n'
-    '    priority                   = 100\n'
-    '    direction                  = "Inbound"\n'
-    '    access                     = "Allow"\n'
-    '    protocol                   = "Tcp"\n'
-    '    source_port_range          = "*"\n'
-    '    destination_port_range     = "3389"\n'
-    '    source_address_prefix      = "*"\n'
-    '    destination_address_prefix = "*"'
+# 1) Fix public container access
+# Any of:
+#   container_access_type = "blob"
+#   container_access_type = "container"
+# becomes:
+#   container_access_type = "private"
+tf = re.sub(
+    r'container_access_type\s*=\s*"(blob|container)"',
+    'container_access_type = "private"',
+    tf,
 )
 
-after = (
-    'name                       = "rdp-restricted"\n'
-    '    priority                   = 100\n'
-    '    direction                  = "Inbound"\n'
-    '    access                     = "Deny"\n'
-    '    protocol                   = "Tcp"\n'
-    '    source_port_range          = "*"\n'
-    '    destination_port_range     = "3389"\n'
-    '    source_address_prefix      = "VirtualNetwork"\n'
-    '    destination_address_prefix = "VirtualNetwork"'
+# 2) Fix NSG rule that allows RDP 3389 from any
+
+# 2a) Change access from Allow to Deny for the rdp-anywhere rule
+tf = re.sub(
+    r'(security_rule\s*{[^}]*name\s*=\s*"rdp-anywhere"[^}]*access\s*=\s*")Allow(")',
+    r'\1Deny\2',
+    tf,
+    flags=re.S,
 )
 
-tf = tf.replace(before, after)
+# 2b) Change source_address_prefix from * to VirtualNetwork
+tf = re.sub(
+    r'(security_rule\s*{[^}]*destination_port_range\s*=\s*"3389"[^}]*source_address_prefix\s*=\s*")\*(")',
+    r'\1VirtualNetwork\2',
+    tf,
+    flags=re.S,
+)
 
 tf_path.write_text(tf)
-print("Auto-remediation applied.")
+print("Auto remediation applied: storage container access set to private and RDP rule restricted.")
