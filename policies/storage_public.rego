@@ -1,10 +1,15 @@
-
 package terraform.azure.storage
 
+# Input is a Terraform plan in JSON format.
+# We treat public containers as a policy violation.
+
 deny[msg] {
-  resource := input.resource_changes[_]
-  resource.type == "azurerm_storage_account"
-  allow := resource.change.after.allow_blob_public_access
-  allow == true
-  msg := sprintf("Storage account %v allows public blob access", [resource.name])
+  rc := input.resource_changes[_]
+  rc.type == "azurerm_storage_container"
+
+  access := rc.change.after.container_access_type
+  access == "blob"  or "container"    # public read for blobs and containers
+
+
+  msg := sprintf("Storage container %v allows anonymous public access (container_access_type = %v)", [rc.name, access])
 }

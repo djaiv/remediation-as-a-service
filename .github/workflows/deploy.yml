@@ -1,10 +1,10 @@
-
-name: CD - Terraform Apply with Azure OIDC
+name: CD - Terraform Plan in Azure
 
 on:
   push:
     branches: [ "main" ]
-    paths: [ "terraform/**" ]
+    paths:
+      - 'terraform/**'
 
 env:
   ARM_USE_OIDC: true
@@ -12,14 +12,16 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
 jobs:
-  apply:
+  plan:
     runs-on: ubuntu-latest
     environment: prod
     permissions:
       id-token: write
       contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Azure login with OIDC
         uses: azure/login@v2
@@ -34,7 +36,18 @@ jobs:
         working-directory: terraform
         run: terraform init -input=false
 
-      - name: Terraform Apply
+      - name: Terraform Plan (no apply)
         working-directory: terraform
         run: |
-          terraform apply -auto-approve             -var="location=${{ vars.AZURE_LOCATION }}"             -var="resource_group_name=${{ vars.AZURE_RG }}"             -var="storage_account_name=raas${{ github.run_id }}"
+          terraform plan -detailed-exitcode \
+            -var="location=${{ vars.AZURE_LOCATION }}" \
+            -var="resource_group_name=${{ vars.AZURE_RG }}" \
+            -var="storage_account_name=raas${{ github.run_id }}"
+          code=$?
+          echo "Terraform exit code: $code"
+          # 0 = no changes, 2 = changes present
+          if [ "$code" -eq 0 ] || [ "$code" -eq 2 ]; then
+            exit 0
+          else
+            exit "$code"
+          fi
