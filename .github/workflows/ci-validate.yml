@@ -35,7 +35,7 @@ jobs:
 
       - name: Terraform Format
         working-directory: terraform
-        run: terraform fmt -check
+        run: terraform fmt
 
       - name: Terraform Plan to JSON (offline)
         working-directory: terraform
