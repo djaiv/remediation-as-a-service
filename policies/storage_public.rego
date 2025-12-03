@@ -1,15 +1,19 @@
 package terraform.azure.storage
 
-# Input is a Terraform plan in JSON format.
-# We treat public containers as a policy violation.
+# Flags any storage container that allows anonymous public access.
+# New style Rego: deny contains msg if { ... }
 
-deny[msg] {
-  rc := input.resource_changes[_]
+deny contains msg if {
+  some rc in input.resource_changes
   rc.type == "azurerm_storage_container"
 
   access := rc.change.after.container_access_type
-  access == "blob"  # or "container"   
+  access == "blob"   # public blob access
+  # Uncomment this if you also want to treat "container" as public:
+  # access == "container"
 
-
-  msg := sprintf("Storage container %v allows anonymous public access (container_access_type = %v)", [rc.name, access])
+  msg := sprintf(
+    "Storage container %v allows anonymous public access (container_access_type = %v)",
+    [rc.name, access],
+  )
 }
