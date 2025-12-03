@@ -1,4 +1,3 @@
-
 resource "azurerm_resource_group" "demo" {
   name     = var.resource_group_name
   location = var.location
@@ -11,16 +10,16 @@ resource "azurerm_storage_account" "sa" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  # risky - allow public blob access for demo
-  # Note: 'allow_blob_public_access' is not a valid attribute for azurerm_storage_account in some provider versions.
-  # To allow public blob access, configure it within the 'azurerm_storage_container' resource as follows:
+  # risky at account level in some provider versions
+  # keep this if your provider supports it and it validates
+  # allow_blob_public_access = true
+}
 
-  resource "azurerm_storage_container" "sa" {
-    name                  = "public-container"
-    storage_account_name  = azurerm_storage_account.sa.name
-    container_access_type = "blob"
-  }
-
+# risky container config for the demo
+resource "azurerm_storage_container" "sa" {
+  name                  = "public-container"
+  storage_account_name  = azurerm_storage_account.sa.name
+  container_access_type = "blob"   # allows anonymous blob access
 }
 
 resource "azurerm_network_security_group" "nsg" {
