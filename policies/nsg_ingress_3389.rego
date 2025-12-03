@@ -1,12 +1,12 @@
 package terraform.azure.nsg
 
-# Detects any NSG rule that allows inbound RDP 3389 from any source.
+# Flag any NSG rule that allows inbound RDP 3389 from any source.
 
 deny contains msg if {
-  some rc in input.resource_changes
-  rc.type == "azurerm_network_security_group"
+  some res in input.planned_values.root_module.resources
+  res.type == "azurerm_network_security_group"
 
-  some rule in rc.change.after.security_rule
+  some rule in res.values.security_rule
 
   rule.direction == "Inbound"
   rule.access == "Allow"
@@ -16,6 +16,6 @@ deny contains msg if {
 
   msg := sprintf(
     "NSG %v allows RDP 3389 from any source (rule: %v)",
-    [rc.name, rule.name],
+    [res.name, rule.name],
   )
 }
