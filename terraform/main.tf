@@ -15,11 +15,11 @@ resource "azurerm_storage_account" "sa" {
   # Note: 'allow_blob_public_access' is not a valid attribute for azurerm_storage_account in some provider versions.
   # To allow public blob access, configure it within the 'azurerm_storage_container' resource as follows:
 
-   resource "azurerm_storage_container" "sa" {
-     name                  = "public-container"
-     storage_account_name  = azurerm_storage_account.sa.name
-     container_access_type = "blob"
-   }
+  resource "azurerm_storage_container" "sa" {
+    name                  = "public-container"
+    storage_account_name  = azurerm_storage_account.sa.name
+    container_access_type = "blob"
+  }
 
 }
 
