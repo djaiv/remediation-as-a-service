@@ -1,8 +1,10 @@
-package terraform.azure.nsg
+package main
+
+import future.keywords.if
 
 # Fail if any NSG allows inbound RDP 3389 from any source.
 
-deny contains msg if {
+deny[msg] if {
   some rc in input.resource_changes
   rc.type == "azurerm_network_security_group"
 
