@@ -1,0 +1,29 @@
+
+name: Alert to Auto-Fix - Repository Dispatch
+
+on:
+  repository_dispatch:
+    types: [ "cspm_alert" ]
+
+jobs:
+  react_to_alert:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git checkout -b "alertfix/${{ github.run_id }}"
+          python3 scripts/autorem_fix.py
+          git config user.name "raas-bot"
+          git config user.email "raas-bot@users.noreply.github.com"
+          git add -A
+          git commit -m "Auto fix from CSPM alert"
+          git push origin HEAD
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ github.ref_name }}
+          base: main
+          title: "CSPM Alert Auto Fix"
+          body: "Fix generated from external alert - closed loop remediation."

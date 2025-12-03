@@ -1,0 +1,40 @@
+
+name: CD - Terraform Apply with Azure OIDC
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "terraform/**" ]
+
+env:
+  ARM_USE_OIDC: true
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve             -var="location=${{ vars.AZURE_LOCATION }}"             -var="resource_group_name=${{ vars.AZURE_RG }}"             -var="storage_account_name=raas${{ github.run_id }}"
