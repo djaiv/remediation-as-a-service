@@ -8,7 +8,7 @@ on:
 
 env:
   ARM_SKIP_CREDENTIALS_VALIDATION: true
-  ARM_SKIP_PROVIDER_REGISTRATION: true
+  #ARM_SKIP_PROVIDER_REGISTRATION: true
 
   # Fake values so azurerm chooses env auth instead of Azure CLI
   ARM_CLIENT_ID: "00000000-0000-0000-0000-000000000000"
