@@ -1,16 +1,14 @@
 package main
 
-import future.keywords.if
+import rego.v1
 
 # Fail if any NSG allows inbound RDP 3389 from any source.
 
-deny[msg] if {
+deny contains msg if {
   some rc in input.resource_changes
   rc.type == "azurerm_network_security_group"
 
-  after := rc.change.after
-
-  some rule in after.security_rule
+  some rule in rc.change.after.security_rule
 
   rule.direction == "Inbound"
   rule.access == "Allow"
@@ -20,6 +18,6 @@ deny[msg] if {
 
   msg := sprintf(
     "NSG %v allows RDP 3389 from any source (rule: %v)",
-    [rc.name, rule.name],
+    [rc.address, rule.name],
   )
 }

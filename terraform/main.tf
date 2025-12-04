@@ -15,7 +15,7 @@ resource "azurerm_storage_account" "sa" {
   # allow_blob_public_access = true
 }
 
-# risky container config for the demo
+# risky container config for the demo with no deploy
 resource "azurerm_storage_container" "sa" {
   name                  = "public-container"
   storage_account_name  = azurerm_storage_account.sa.name
