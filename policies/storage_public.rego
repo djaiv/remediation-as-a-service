@@ -1,17 +1,13 @@
 package main
 
-import future.keywords.if
-
 # Fail if any azurerm_storage_container is public.
 
-deny[msg] if {
-  some rc in input.resource_changes
+deny[msg] {
+  rc := input.resource_changes[_]
   rc.type == "azurerm_storage_container"
 
-  after := rc.change.after
-  access := after.container_access_type
-
-  access == "blob"   # public blob access
+  access := rc.change.after.container_access_type
+  access == "blob"   # treat blob as public
 
   msg := sprintf(
     "Storage container %v allows anonymous public access (container_access_type = %v)",
