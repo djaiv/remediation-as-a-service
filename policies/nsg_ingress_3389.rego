@@ -1,12 +1,14 @@
 package main
 
+import rego.v1
+
 # Fail if any NSG allows inbound RDP 3389 from any source.
 
-deny[msg] {
-  rc := input.resource_changes[_]
+deny contains msg if {
+  some rc in input.resource_changes
   rc.type == "azurerm_network_security_group"
 
-  rule := rc.change.after.security_rule[_]
+  some rule in rc.change.after.security_rule
 
   rule.direction == "Inbound"
   rule.access == "Allow"
@@ -16,6 +18,6 @@ deny[msg] {
 
   msg := sprintf(
     "NSG %v allows RDP 3389 from any source (rule: %v)",
-    [rc.name, rule.name],
+    [rc.address, rule.name],
   )
 }
