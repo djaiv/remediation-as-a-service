@@ -19,7 +19,7 @@ resource "azurerm_storage_account" "sa" {
 resource "azurerm_storage_container" "sa" {
   name                  = "public-container"
   storage_account_name  = azurerm_storage_account.sa.name
-  container_access_type = "blob"   # allows anonymous blob access
+  container_access_type = "private"   # allows anonymous blob access
 }
 
 resource "azurerm_network_security_group" "nsg" {
@@ -31,11 +31,11 @@ resource "azurerm_network_security_group" "nsg" {
     name                       = "rdp-anywhere"
     priority                   = 100
     direction                  = "Inbound"
-    access                     = "Allow"
+    access                     = "Deny"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "3389"
-    source_address_prefix      = "*"
+    source_address_prefix      = "VirtualNetwork"
     destination_address_prefix = "*"
   }
 }
